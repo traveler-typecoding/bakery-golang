@@ -11,7 +11,7 @@ migrations. Orchestrated by the `bakery-infra` repo.
 ├── .air.toml           # hot-reload config used by the dev target
 ├── go.mod
 ├── cmd/server/main.go  # HTTP server with /health
-└── migrations/         # versioned SQL migrations (up/down)
+└── migrations/         # goose SQL migrations (Up + Down in one file)
 ```
 
 ## Run standalone (just this service)
@@ -27,9 +27,60 @@ Normally you run it via the full stack in `bakery-infra`
 
 ## Migrations
 
-`migrations/` holds versioned schema changes applied by a migration tool
-(e.g. [golang-migrate](https://github.com/golang-migrate/migrate), goose, or
-atlas). These travel with the code that depends on them.
+`migrations/` holds versioned schema changes applied with
+[goose](https://github.com/pressly/goose). These travel with the code that
+depends on them.
+
+Each file is `NNNNN_name.sql` and contains both directions:
+
+```sql
+-- +goose Up
+CREATE TABLE ...;
+
+-- +goose Down
+DROP TABLE IF EXISTS ...;
+```
+
+Tables are grouped into PostgreSQL schemas by business area (created in
+`00002_create_schemas.sql`):
+
+| Schema | Tables |
+|---|---|
+| `org` | outlets, positions, employees, employee_assignments (+ view employee_current_assignment) |
+| `auth` | roles, users, user_roles |
+| `inventory` | units, item_categories, suppliers, items, recipes, recipe_lines, stock_movements (+ view stock_on_hand) |
+| `sales` | tax_rates, customers, sales, sale_lines, payments |
+
+Always write the schema name in migrations (`org.outlets`, `REFERENCES org.outlets(id)`).
+goose keeps its own `goose_db_version` table in `public`.
+
+One table per migration, ordered so foreign-key targets are created first.
+goose runs each file in its own transaction, so don't add `BEGIN/COMMIT`.
+Never edit a migration that has already run somewhere; add a new one instead.
+Applied versions are recorded in the `goose_db_version` table.
+
+### Install goose (once)
+
+```cmd
+go install github.com/pressly/goose/v3/cmd/goose@latest
+```
+
+### Run (from this repo, with the compose Postgres up)
+
+Windows cmd:
+
+```cmd
+set GOOSE_DRIVER=postgres
+set "GOOSE_DBSTRING=postgres://bakery:changeme@localhost:5432/bakerydb?sslmode=disable"
+set GOOSE_MIGRATION_DIR=migrations
+
+goose status        :: list applied / pending migrations
+goose up            :: apply all pending
+goose down          :: roll back the last one
+goose create -s add_something sql   :: new file with the next number
+```
+
+Use the user, password and database from `bakery-infra/.env` if you changed them.
 
 > Note: `bakery-infra/db/init/*.sql` runs only once, on an empty Postgres
 > volume, for first-boot bootstrap. Real schema evolution belongs here in
