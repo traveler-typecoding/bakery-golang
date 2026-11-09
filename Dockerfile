@@ -1,7 +1,7 @@
 # =============================================================================
 # Base: shared Go toolchain layer
 # =============================================================================
-FROM golang:1.23-alpine AS base
+FROM golang:1.27-alpine AS base
 WORKDIR /app
 RUN apk add --no-cache git
 # Cache modules first so code changes don't re-download deps.
@@ -12,7 +12,9 @@ RUN go mod download
 # dev: hot reload with air. Source is bind-mounted via compose.
 # =============================================================================
 FROM base AS dev
-RUN go install github.com/air-verse/air@latest
+# Pinned for reproducible builds. Newer air releases may require a newer Go
+# than the base image, so bump air and the base image together.
+RUN go install github.com/air-verse/air@v1.67.4
 COPY . .
 EXPOSE 8080
 CMD ["air", "-c", ".air.toml"]
