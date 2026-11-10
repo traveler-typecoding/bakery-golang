@@ -15,9 +15,14 @@ CREATE TABLE sales.sales (
     grand_total     numeric(18,2) NOT NULL,
     sold_at         timestamptz NOT NULL,       -- device time of sale
     synced_at       timestamptz NOT NULL DEFAULT now(),
-    UNIQUE (outlet_id, receipt_no)
+    UNIQUE (outlet_id, receipt_no),
+    -- No amount is calculated or cross-checked here; the backend computes the
+    -- totals. The database only rejects negative amounts.
+    CHECK (subtotal >= 0 AND discount_total >= 0 AND tax_total >= 0 AND grand_total >= 0)
 );
 CREATE INDEX idx_sales_outlet_date ON sales.sales(outlet_id, sold_at);
+-- Customer purchase history. Walk-in sales (NULL customer) are left out of the index.
+CREATE INDEX idx_sales_customer ON sales.sales(customer_id) WHERE customer_id IS NOT NULL;
 
 -- +goose Down
 DROP TABLE IF EXISTS sales.sales;

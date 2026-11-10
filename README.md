@@ -48,11 +48,13 @@ Tables are grouped into PostgreSQL schemas by business area (created in
 |---|---|
 | `org` | outlets, positions, employees, employee_assignments (+ view employee_current_assignment) |
 | `auth` | roles, users, user_roles |
-| `inventory` | units, item_categories, suppliers, items, recipes, recipe_lines, stock_movements (+ view stock_on_hand) |
+| `inventory` | units, item_categories, suppliers, items, recipes, recipe_lines, stock_movements |
 | `sales` | tax_rates, customers, sales, sale_lines, payments |
 
 Always write the schema name in migrations (`org.outlets`, `REFERENCES org.outlets(id)`).
 goose keeps its own `goose_db_version` table in `public`.
+
+Full reference of every migration, table and column: [docs/migrations.md](docs/migrations.md).
 
 One table per migration, ordered so foreign-key targets are created first.
 goose runs each file in its own transaction, so don't add `BEGIN/COMMIT`.

@@ -1,6 +1,14 @@
 -- +goose Up
 -- Stock ledger (append-only).
 -- Never UPDATE or DELETE rows here. Corrections are new rows.
+-- The backend enforces this: its stock repository only offers an insert.
+--
+-- Stock on hand is calculated by the backend, not stored or defined here.
+-- Query to use in the Go repository:
+--   SELECT outlet_id, item_id, sum(qty_change) AS qty_on_hand
+--     FROM inventory.stock_movements
+--    WHERE outlet_id = $1
+--    GROUP BY outlet_id, item_id;
 CREATE TABLE inventory.stock_movements (
     id              bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     outlet_id       bigint NOT NULL REFERENCES org.outlets(id),
@@ -20,11 +28,5 @@ CREATE TABLE inventory.stock_movements (
 CREATE INDEX idx_stock_mov_lookup ON inventory.stock_movements(outlet_id, item_id, created_at);
 CREATE INDEX idx_stock_mov_ref    ON inventory.stock_movements(reference_type, reference_id);
 
-CREATE VIEW inventory.stock_on_hand AS
-SELECT outlet_id, item_id, sum(qty_change) AS qty_on_hand
-FROM inventory.stock_movements
-GROUP BY outlet_id, item_id;
-
 -- +goose Down
-DROP VIEW IF EXISTS inventory.stock_on_hand;
 DROP TABLE IF EXISTS inventory.stock_movements;

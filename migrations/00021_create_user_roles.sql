@@ -1,8 +1,10 @@
 -- +goose Up
 -- Which roles each user holds. A user's permissions are the combination of all
 -- their roles, e.g. owner + accountant.
+-- No ON DELETE CASCADE: a user who still has roles cannot be deleted.
+-- Deactivate users with auth.users.is_active instead.
 CREATE TABLE auth.user_roles (
-    user_id     bigint NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id     bigint NOT NULL REFERENCES auth.users(id),
     role_id     bigint NOT NULL REFERENCES auth.roles(id),
     granted_by  bigint REFERENCES auth.users(id),
     granted_at  timestamptz NOT NULL DEFAULT now(),
