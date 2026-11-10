@@ -401,13 +401,10 @@ Primary key: `(user_id, role_id)`. Index: `idx_user_roles_role (role_id)`.
 
 ## Running
 
-From `bakery-golang`, with Postgres running:
+From `bakery-golang`, with Postgres running. goose reads `GOOSE_DRIVER`, `GOOSE_DBSTRING` and `GOOSE_MIGRATION_DIR` from `bakery-golang/.env` (not committed; create it once with `copy .env.example .env`).
 
 ```cmd
-set GOOSE_DRIVER=postgres
-set "GOOSE_DBSTRING=postgres://bakery:changeme@localhost:5432/bakerydb?sslmode=disable"
-set GOOSE_MIGRATION_DIR=migrations
-
+goose env
 goose status
 goose up
 goose down

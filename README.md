@@ -69,20 +69,27 @@ go install github.com/pressly/goose/v3/cmd/goose@latest
 
 ### Run (from this repo, with the compose Postgres up)
 
-Windows cmd:
+goose reads its settings (`GOOSE_DRIVER`, `GOOSE_DBSTRING`,
+`GOOSE_MIGRATION_DIR`) from a `.env` file in the folder you run it from, so
+nothing has to be `set` in each new terminal. `.env` is not committed; create
+it once from the template:
 
 ```cmd
-set GOOSE_DRIVER=postgres
-set "GOOSE_DBSTRING=postgres://bakery:changeme@localhost:5432/bakerydb?sslmode=disable"
-set GOOSE_MIGRATION_DIR=migrations
+copy .env.example .env
+```
 
+Then, from this repo:
+
+```cmd
+goose env           :: show the settings goose picked up
 goose status        :: list applied / pending migrations
 goose up            :: apply all pending
 goose down          :: roll back the last one
 goose create -s add_something sql   :: new file with the next number
 ```
 
-Use the user, password and database from `bakery-infra/.env` if you changed them.
+If you changed the user, password, database or port in `bakery-infra/.env`,
+change `GOOSE_DBSTRING` in `.env` to match.
 
 > Note: `bakery-infra/db/init/*.sql` runs only once, on an empty Postgres
 > volume, for first-boot bootstrap. Real schema evolution belongs here in
